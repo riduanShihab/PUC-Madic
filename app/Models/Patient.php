@@ -2,9 +2,30 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @property int $id
+ * @property string $patient_id
+ * @property string $name
+ * @property string $gender
+ * @property int $age
+ * @property string|null $date_of_birth
+ * @property string $phone
+ * @property string|null $email
+ * @property string|null $blood_group
+ * @property string|null $address
+ * @property string|null $emergency_contact
+ * @property string|null $medical_history
+ * @property string|null $allergies
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @mixin \Illuminate\Database\Eloquent\Builder
+ */
 class Patient extends Model
 {
-    use \Illuminate\Database\Eloquent\Factories\HasFactory;
+    use HasFactory;
 
     protected $fillable = [
         'patient_id',
@@ -25,3 +46,4 @@ class Patient extends Model
     {
         return $this->hasMany(Appointment::class);
     }
+}
