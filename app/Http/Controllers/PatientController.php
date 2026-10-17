@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Models\Appointment;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
@@ -14,7 +15,7 @@ class PatientController extends Controller
     {
         $search = $request->input('search');
 
-        $patients = Patient::when($search, function ($query, $search) {
+        $patients = Patient::query()->when($search, function ($query, $search) {
             return $query->where('name', 'like', "%{$search}%")
                          ->orWhere('patient_id', 'like', "%{$search}%")
                          ->orWhere('phone', 'like', "%{$search}%")
@@ -31,7 +32,7 @@ class PatientController extends Controller
     {
         // Generate a suggested unique ID like PUC-P-1042
         $suggestedId = 'PUC-P-' . mt_rand(1000, 9999);
-        while (Patient::where('patient_id', $suggestedId)->exists()) {
+        while (Patient::query()->where('patient_id', $suggestedId)->exists()) {
             $suggestedId = 'PUC-P-' . mt_rand(1000, 9999);
         }
 
@@ -58,7 +59,7 @@ class PatientController extends Controller
             'allergies' => 'nullable|string|max:500',
         ]);
 
-        Patient::create($validated);
+        Patient::query()->create($validated);
 
         return redirect()->route('patients.index')->with('success', 'Patient registered successfully!');
     }
@@ -66,12 +67,9 @@ class PatientController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Patient $patient)
+    public function show($id)
     {
-        // Load relationships if appointments exist
-        if (class_exists(\App\Models\Appointment::class)) {
-            $patient->load(['appointments.doctor']);
-        }
+        $patient = Patient::query()->with(['appointments.doctor'])->findOrFail($id);
 
         return view('patients.show', compact('patient'));
     }
@@ -79,16 +77,20 @@ class PatientController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Patient $patient)
+    public function edit($id)
     {
+        $patient = Patient::findOrFail($id);
+
         return view('patients.edit', compact('patient'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Patient $patient)
+    public function update(Request $request, $id)
     {
+        $patient = Patient::findOrFail($id);
+
         $validated = $request->validate([
             'patient_id' => 'required|string|max:50|unique:patients,patient_id,' . $patient->id,
             'name' => 'required|string|max:255',
@@ -112,8 +114,9 @@ class PatientController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Patient $patient)
+    public function destroy($id)
     {
+        $patient = Patient::findOrFail($id);
         $patient->delete();
 
         return redirect()->route('patients.index')->with('success', 'Patient record deleted successfully!');

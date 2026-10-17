@@ -18,7 +18,7 @@ class AppointmentController extends Controller
         $date = $request->input('date');
         $doctorId = $request->input('doctor_id');
 
-        $appointments = Appointment::with(['doctor', 'patient'])
+        $appointments = Appointment::query()->with(['doctor', 'patient'])
             ->when($status, function ($query, $status) {
                 return $query->where('status', $status);
             })
@@ -32,7 +32,7 @@ class AppointmentController extends Controller
             ->orderBy('appointment_time', 'asc')
             ->paginate(10);
 
-        $doctors = Doctor::orderBy('name')->get();
+        $doctors = Doctor::query()->orderBy('name')->get();
 
         return view('appointments.index', compact('appointments', 'doctors', 'status', 'date', 'doctorId'));
     }
@@ -42,8 +42,8 @@ class AppointmentController extends Controller
      */
     public function create(Request $request)
     {
-        $doctors = Doctor::orderBy('name')->get();
-        $patients = Patient::orderBy('name')->get();
+        $doctors = Doctor::query()->orderBy('name')->get();
+        $patients = Patient::query()->orderBy('name')->get();
         $selectedPatientId = $request->input('patient_id');
         $selectedDoctorId = $request->input('doctor_id');
 
@@ -65,14 +65,14 @@ class AppointmentController extends Controller
         ]);
 
         // Auto-assign serial number for this doctor on this day
-        $lastSerial = Appointment::where('doctor_id', $validated['doctor_id'])
+        $lastSerial = Appointment::query()->where('doctor_id', $validated['doctor_id'])
             ->whereDate('appointment_date', $validated['appointment_date'])
             ->max('serial_number') ?? 0;
 
         $validated['serial_number'] = $lastSerial + 1;
         $validated['status'] = 'Confirmed';
 
-        Appointment::create($validated);
+        Appointment::query()->create($validated);
 
         return redirect()->route('appointments.index')->with('success', 'Appointment booked successfully! Serial #' . $validated['serial_number']);
     }
@@ -80,26 +80,29 @@ class AppointmentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Appointment $appointment)
+    public function show($id)
     {
-        $appointment->load(['doctor', 'patient']);
+        $appointment = Appointment::query()->with(['doctor', 'patient'])->findOrFail($id);
+
         return view('appointments.show', compact('appointment'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Appointment $appointment)
+    public function edit($id)
     {
-        $doctors = Doctor::orderBy('name')->get();
-        $patients = Patient::orderBy('name')->get();
+        $appointment = Appointment::findOrFail($id);
+        $doctors = Doctor::query()->orderBy('name')->get();
+        $patients = Patient::query()->orderBy('name')->get();
+
         return view('appointments.edit', compact('appointment', 'doctors', 'patients'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Appointment $appointment)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'doctor_id' => 'required|exists:doctors,id',
@@ -111,6 +114,7 @@ class AppointmentController extends Controller
             'doctor_notes' => 'nullable|string|max:1000',
         ]);
 
+        $appointment = Appointment::findOrFail($id);
         $appointment->update($validated);
 
         return redirect()->route('appointments.index')->with('success', 'Appointment updated successfully!');
@@ -119,8 +123,9 @@ class AppointmentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Appointment $appointment)
+    public function destroy($id)
     {
+        $appointment = Appointment::findOrFail($id);
         $appointment->delete();
 
         return redirect()->route('appointments.index')->with('success', 'Appointment cancelled and removed successfully!');
