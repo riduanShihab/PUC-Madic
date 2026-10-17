@@ -6,6 +6,9 @@ use App\Http\Controllers\DoctorController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\AppointmentController;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -18,6 +21,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('doctors', DoctorController::class);
+    Route::resource('patients', PatientController::class);
+    Route::resource('appointments', AppointmentController::class);
 });
 
 Route::get('/test', function () {

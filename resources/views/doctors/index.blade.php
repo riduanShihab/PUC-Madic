@@ -67,16 +67,24 @@
                                     <span class="text-muted">N/A</span>
                                 @endif
                             </td>
-                            <td>{{ $doctor->name }}</td>
-                            <td>{{ $doctor->department }}</td>
+                            <td>
+                                <strong>{{ $doctor->name }}</strong>
+                                @if(isset($doctor->appointments_count) && $doctor->appointments_count > 0)
+                                    <span class="badge bg-secondary ms-1">{{ $doctor->appointments_count }} appts</span>
+                                @endif
+                            </td>
+                            <td><span class="badge bg-primary">{{ $doctor->department }}</span></td>
                             <td>{{ $doctor->experience }} Years</td>
                             <td class="text-center">
-                                <a href="{{ route('doctors.edit', $doctor->id) }}" class="btn btn-primary btn-sm">Edit</a>
-                                <form action="{{ route('doctors.destroy', $doctor->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this doctor?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                </form>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('doctors.show', $doctor->id) }}" class="btn btn-outline-info">View</a>
+                                    <a href="{{ route('doctors.edit', $doctor->id) }}" class="btn btn-outline-primary">Edit</a>
+                                    <form action="{{ route('doctors.destroy', $doctor->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete Dr. {{ $doctor->name }}?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

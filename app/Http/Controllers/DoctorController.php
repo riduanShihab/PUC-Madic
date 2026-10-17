@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Doctor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DoctorController extends Controller
 {
@@ -12,7 +13,7 @@ class DoctorController extends Controller
      */
     public function index()
     {
-        $doctors = Doctor::all();
+        $doctors = Doctor::withCount('appointments')->orderBy('name')->get();
         return view('doctors.index', compact('doctors'));
     }
 
@@ -33,14 +34,14 @@ class DoctorController extends Controller
             'name' => 'required|string|max:255',
             'age' => 'required|numeric',
             'phone' => 'required|string|max:20',
-            'email' => 'required|email',
+            'email' => 'required|email|max:255',
             'address' => 'required|string',
             'date_of_birth' => 'required|date',
             'date_of_joining' => 'required|date',
             'blood_group' => 'required|string|max:10',
             'department' => 'required|string|max:100',
             'experience' => 'required|numeric',
-            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $doctor = new Doctor($request->except('profile_image', 'specialists', 'designations'));
@@ -60,52 +61,76 @@ class DoctorController extends Controller
         return redirect()->route('doctors.index')->with('success', 'Doctor created successfully!');
     }
 
-    // You can also define edit, update, and destroy methods here as needed
-    public function edit($id)
-{
-   $doctor = Doctor::findOrFail($id);
-    return view('doctors.edit', compact('doctor'));
-}
-public function update(Request $request, $id)
-{
-    // Validate the incoming request data
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'age' => 'required|numeric',
-        'phone' => 'required|string|max:20',
-        'email' => 'required|email',
-        'address' => 'required|string',
-        'date_of_birth' => 'required|date',
-        'date_of_joining' => 'required|date',
-        'blood_group' => 'required|string|max:10',
-        'department' => 'required|string|max:100',
-        'experience' => 'required|numeric',
-        'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-    ]);
-
-    // Find the doctor by ID or fail with 404
-    $doctor = Doctor::findOrFail($id);
-
-    // Fill the doctor model with request data except file and JSON fields
-    $doctor->fill($request->except('profile_image', 'specialists', 'designations'));
-
-    // Convert specialists and designations inputs to JSON (filter out empty strings)
-    $doctor->specialists = json_encode(array_filter($request->input('specialists', [])));
-    $doctor->designations = json_encode(array_filter($request->input('designations', [])));
-
-    // If a new profile image is uploaded, store it and update path
-    if ($request->hasFile('profile_image')) {
-        $path = $request->file('profile_image')->store('doctors', 'public');
-        $doctor->profile_image = $path;
+    /**
+     * Display the specified doctor profile.
+     */
+    public function show($id)
+    {
+        $doctor = Doctor::with(['appointments.patient'])->findOrFail($id);
+        return view('doctors.show', compact('doctor'));
     }
 
-    // Save the updated doctor record
-    $doctor->save();
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit($id)
+    {
+        $doctor = Doctor::findOrFail($id);
+        return view('doctors.edit', compact('doctor'));
+    }
 
-    // Redirect back to doctors index with success message
-    return redirect()->route('doctors.index')->with('success', 'Doctor updated successfully!');
-}
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'age' => 'required|numeric',
+            'phone' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'address' => 'required|string',
+            'date_of_birth' => 'required|date',
+            'date_of_joining' => 'required|date',
+            'blood_group' => 'required|string|max:10',
+            'department' => 'required|string|max:100',
+            'experience' => 'required|numeric',
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
+        $doctor = Doctor::findOrFail($id);
+        $doctor->fill($request->except('profile_image', 'specialists', 'designations'));
 
+        $doctor->specialists = json_encode(array_filter($request->input('specialists', [])));
+        $doctor->designations = json_encode(array_filter($request->input('designations', [])));
 
+        if ($request->hasFile('profile_image')) {
+            // Delete previous image if exists
+            if ($doctor->profile_image && Storage::disk('public')->exists($doctor->profile_image)) {
+                Storage::disk('public')->delete($doctor->profile_image);
+            }
+            $path = $request->file('profile_image')->store('doctors', 'public');
+            $doctor->profile_image = $path;
+        }
+
+        $doctor->save();
+
+        return redirect()->route('doctors.index')->with('success', 'Doctor updated successfully!');
+    }
+
+    /**
+     * Remove the specified doctor from storage.
+     */
+    public function destroy($id)
+    {
+        $doctor = Doctor::findOrFail($id);
+
+        if ($doctor->profile_image && Storage::disk('public')->exists($doctor->profile_image)) {
+            Storage::disk('public')->delete($doctor->profile_image);
+        }
+
+        $doctor->delete();
+
+        return redirect()->route('doctors.index')->with('success', 'Doctor deleted successfully!');
+    }
 }

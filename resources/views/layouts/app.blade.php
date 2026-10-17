@@ -30,7 +30,20 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
-
+                        @auth
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active fw-bold text-primary' : '' }}" href="{{ route('dashboard') }}">🏥 Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('doctors.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('doctors.index') }}">👨‍⚕️ Doctors</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('patients.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('patients.index') }}">🧑‍🤝‍🧑 Patients</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('appointments.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('appointments.index') }}">📅 Appointments</a>
+                            </li>
+                        @endauth
                     </ul>
 
                     <!-- Right Side Of Navbar -->

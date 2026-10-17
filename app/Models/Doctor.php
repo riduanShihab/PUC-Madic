@@ -10,7 +10,6 @@ class Doctor extends Model
     // Add the fillable property to allow mass assignment
     protected $fillable = [
         'name',
-        'specialty',
         'age',
         'phone',
         'address',
@@ -19,7 +18,14 @@ class Doctor extends Model
         'date_of_joining',
         'blood_group',
         'department',
+        'specialists',
+        'designations',
         'experience',
         'profile_image',
     ];
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
 }
